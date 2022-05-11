@@ -31,7 +31,7 @@ async def online_check(): # 检查节点是否存活
             t = n.get("last_alive")
             t = int(t)
             now = int(time.time())
-            if now - t > 1:
+            if now - t > 61:
                 ids = furry.ctx.online.pop(i)
                 print("ID: {} 超时".format(i))
 
