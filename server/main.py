@@ -11,8 +11,6 @@ furry.ctx.online = {
 }
 
 
-
-
 def ret(code, message, data="empty", statuss=200):
     d = {
         "code": code,
@@ -22,7 +20,8 @@ def ret(code, message, data="empty", statuss=200):
     }
     return json(d, status=statuss)
 
-async def online_check(): # 检查节点是否存活
+
+async def online_check():  # 检查节点是否存活
     while True:
         await asyncio.sleep(5)
         m = furry.ctx.online.keys()
@@ -35,7 +34,9 @@ async def online_check(): # 检查节点是否存活
                 ids = furry.ctx.online.pop(i)
                 print("ID: {} 超时".format(i))
 
-furry.add_task(online_check())        
+
+furry.add_task(online_check())
+
 
 @furry.post("/reg")
 async def reg(request: Request):
@@ -50,6 +51,20 @@ async def reg(request: Request):
             "version": ver,
             "last_alive": data["time"]
         }
+        return ret(200, "success")
+    except Exception(e):
+        return ret(999, "Unknown Error", e)
+
+
+@furry.post("/alive")
+async def alive(request: Request):
+    try:
+        data = request.json
+        ids = data["id"]
+        times = data["time"]
+        if ids not in furry.ctx.online.keys():
+            return ret(102, "Device not reg")
+        furry.ctx.online[ids]["last_alive"] = times
         return ret(200, "success")
     except Exception(e):
         return ret(999, "Unknown Error", e)
