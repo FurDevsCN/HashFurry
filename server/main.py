@@ -2,14 +2,13 @@ from sanic import Sanic
 from sanic.response import json
 from sanic.request import Request
 import time
+import asyncio
 
 furry = Sanic("Hashfurry")
 
 furry.ctx.online = {
 
 }
-
-
 
 
 def ret(code, message, data="empty", statuss=200):
@@ -20,6 +19,23 @@ def ret(code, message, data="empty", statuss=200):
         "time": time.time(),
     }
     return json(d, status=statuss)
+
+
+async def online_check():  # 检查节点是否存活
+    while True:
+        await asyncio.sleep(5)
+        m = furry.ctx.online.keys()
+        for i in list(m):
+            n = furry.ctx.online.get(i)
+            t = n.get("last_alive")
+            t = int(t)
+            now = int(time.time())
+            if now - t > 61:
+                ids = furry.ctx.online.pop(i)
+                print("ID: {} 超时".format(i))
+
+
+furry.add_task(online_check())
 
 
 @furry.post("/reg")
@@ -35,6 +51,20 @@ async def reg(request: Request):
             "version": ver,
             "last_alive": data["time"]
         }
+        return ret(200, "success")
+    except Exception(e):
+        return ret(999, "Unknown Error", e)
+
+
+@furry.post("/alive")
+async def alive(request: Request):
+    try:
+        data = request.json
+        ids = data["id"]
+        times = data["time"]
+        if ids not in furry.ctx.online.keys():
+            return ret(102, "Device not reg")
+        furry.ctx.online[ids]["last_alive"] = times
         return ret(200, "success")
     except Exception(e):
         return ret(999, "Unknown Error", e)

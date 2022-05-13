@@ -1,6 +1,7 @@
 import requests as rq
 import random
 import time
+import schedule 
 
 '''
     配置
@@ -14,6 +15,7 @@ class Setting():
     class urls():
         root = "http://127.0.0.1/" # 网站根目录
         connect = "reg" # 连接模块
+        alive = "alive" # 保活模块
 
 '''
     错误输出
@@ -38,7 +40,18 @@ class Controller():
         print(Setting.urls.root)
         pass
 
-
+    def keep_alive(self):
+        url = Setting.urls.root + Setting.urls.alive
+        data = {
+            "id": self.id,
+            "time": time.time()
+        }
+        try:
+            ret = rq.post(url, json=data).json()
+            print(ret)
+        except:
+            Error.NetworkError()
+        
     def connect(self):
         url = Setting.urls.root + Setting.urls.connect
         data = {
@@ -49,12 +62,21 @@ class Controller():
         try:
             ret = rq.post(url, json=data).json()
             print(ret)
+            schedule.every(10).seconds.do(self.keep_alive)
         except:
             Error.NetworkError()
-            self.connect()
+            return False
+        return True
+
+    def start(self): # 开始循环
+        while not self.connect():
+            time.sleep(4.9)
+        # 循环队列
+        while True:
+            schedule.run_pending()
+            time.sleep(0.2)
 
 
 
-Furry = Controller(111111)
-Furry.connect()
-
+Furry = Controller()
+Furry.start()
